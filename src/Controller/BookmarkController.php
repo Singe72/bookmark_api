@@ -176,45 +176,46 @@ class BookmarkController extends AbstractController
     /**
      * @Route("/api/bookmarks/{id}", name="update_bookmark", methods={"PUT"})
      */
-    public function updateBookmark(ManagerRegistry $doctrine, Request $request, UrlHelper $urlHelper): Response
+    public function updateBookmark(ManagerRegistry $doctrine, Request $request, $id): Response
     {
         $response = new Response();
         $response->headers->set("Server", "BookmarkAPI");
 
+        $entityManager = $doctrine->getManager();
+        $bookmark = $entityManager->getRepository(Bookmark::class)->find($id);
+
+        if (!$bookmark) {
+            $response->setStatusCode(Response::HTTP_NOT_FOUND, "Not Found");
+            $response->setContent("Wrong bookmark id!");
+           return $response;
+        }
+
         $name = $request->get("name");
         $description = $request->get("description");
         $url = $request->get("url");
+        $bookmark->setLastupdate(new \DateTime('now', new \DateTimeZone(date_default_timezone_get())));
 
-        if (!isset($name) or !isset($url)) {
+        if (!isset($name) AND !isset($description) AND !isset($url)) {
             $response->setStatusCode(Response::HTTP_BAD_REQUEST, "Bad Request");
             $response->setContent("Your request is empty!");
             return $response;
         }
-        if (strlen($name) > 255) {
-            $response->setStatusCode(Response::HTTP_BAD_REQUEST, "Bad Request");
-            $response->setContent("Name must be less than 255 characters");
-            return $response;
+
+        if ($name) {
+            $bookmark->setName($name);
+        }
+        if ($description) {
+            $bookmark->setDescription($description);
+        }
+        if ($url) {
+            $bookmark->setUrl($url);
         }
 
         $entityManager = $doctrine->getManager();
-
-        $bookmark = new Bookmark();
-        $bookmark->setName($name);
-        $bookmark->setDescription($description);
-        $bookmark->setUrl($url);
-        $bookmark->setLastupdate(new \DateTime("now", new \DateTimeZone(date_default_timezone_get())));
-
-        $entityManager->persist($bookmark);
         $entityManager->flush();
 
-        $id = $bookmark->getId();
-
-        $response->setStatusCode(Response::HTTP_CREATED, "Created");
-        $response->setContent("Created");
-        $response->headers->set(
-            "Location",
-            $urlHelper->getAbsoluteUrl("/api/bookmarks/$id")
-        );
+        $response->setStatusCode(Response::HTTP_OK, "Ok");
+        $response->setContent("Content updated");
 
         return $response;
     }
