@@ -159,7 +159,7 @@ class BookmarkController extends AbstractController
 
         $response->setCache([
             "last_modified" => $bookmark->getLastupdate(),
-            "etag" => sha1($response->getContent()),
+            "etag" => sha1($response->getContent().$id),
             "max_age" => 60,
             "public" => true
         ]);
