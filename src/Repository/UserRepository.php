@@ -56,6 +56,36 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
         $this->add($user, true);
     }
 
+    public function findLastEntry(): ?User
+    {
+        return $this
+            ->createQueryBuilder("user")
+            ->orderBy("user.id", "DESC")
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult();
+
+    }
+
+    public function findNextX($firstResult=0, $step=10): array
+    {
+        return $this
+            ->createQueryBuilder("user")
+            ->orderBy("user.id", "ASC")
+            ->setFirstResult($firstResult)
+            ->setMaxResults($step)
+            ->getQuery()
+            ->getResult();
+    }
+
+    public function countAll(): int
+    {
+        return $this->createQueryBuilder("user")
+            ->select("COUNT(user.id)")
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
 //    /**
 //     * @return User[] Returns an array of User objects
 //     */

@@ -20,7 +20,7 @@ class ApiSecurityController extends AbstractController
         if ($user === null) {
             return $this->json([
                 "message" => "missing credentials",
-                "request" => $request->getContent()
+                "request" => json_decode($request->getContent())
             ], JsonResponse::HTTP_UNAUTHORIZED);
         }
 

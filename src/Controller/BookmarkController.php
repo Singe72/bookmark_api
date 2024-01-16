@@ -13,6 +13,8 @@ use Symfony\Component\Routing\Annotation\Route;
 
 class BookmarkController extends AbstractController
 {
+    use TraitController;
+
     /**
      * @Route("/bookmark", name="app_bookmark")
      */
@@ -95,6 +97,8 @@ class BookmarkController extends AbstractController
         $name = $request->get("name");
         $description = $request->get("description");
         $url = $request->get("url");
+
+        /* [$name, $description, $url] = $this->getRequestData($request); */
 
         if (!isset($url) or !isset($name)) {
             $response->setStatusCode(Response::HTTP_BAD_REQUEST, "Bad Request");

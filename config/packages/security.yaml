@@ -21,7 +21,7 @@ security:
             security: false
         main:
             lazy: true
-            provider: administrators
+            provider: app_user_provider
             json_login:
                 check_path: api_login
             logout:
@@ -38,8 +38,10 @@ security:
     access_control:
         - { path: "^/admin", roles: ROLE_ADMIN }
         - { path: "^/admin/users", roles: ROLE_SUPER_ADMIN }
-        - { path: ^/api/(bookmarks|users)/\d+$, roles: ROLE_USER }
-        - { path: ^/api/(bookmarks)/\d+$, roles: ROLE_ADMIN, methods: [DELETE] }
+        - { path: ^/api/(bookmarks)/\d+$, roles: ROLE_USER }
+        - { path: ^/api/(bookmarks)/\d+$, roles: ROLE_ADMIN, methods: [DELETE]  }
+        - { path: ^/api/(users)/\d+$, roles: ROLE_ADMIN }
+        - { path: ^/api/(users)/\d+$, roles: ROLE_SUPER_ADMIN, methods: [DELETE] }
 
     role_hierarchy:
         ROLE_ADMIN: ROLE_USER

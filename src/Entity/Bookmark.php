@@ -37,6 +37,11 @@ class Bookmark
      */
     private $lastupdate;
 
+    /**
+     * @ORM\ManyToOne(targetEntity=User::class, inversedBy="bookmarks")
+     */
+    private $user_id;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -86,6 +91,18 @@ class Bookmark
     public function setLastupdate(\DateTimeInterface $lastupdate): self
     {
         $this->lastupdate = $lastupdate;
+
+        return $this;
+    }
+
+    public function getUserId(): ?User
+    {
+        return $this->user_id;
+    }
+
+    public function setUserId(?User $user_id): self
+    {
+        $this->user_id = $user_id;
 
         return $this;
     }
