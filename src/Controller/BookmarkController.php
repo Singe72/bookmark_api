@@ -94,11 +94,9 @@ class BookmarkController extends AbstractController
         $response = new Response();
         $response->headers->set("Server", "BookmarkAPI");
 
-        $name = $request->get("name");
-        $description = $request->get("description");
-        $url = $request->get("url");
-
-        /* [$name, $description, $url] = $this->getRequestData($request); */
+        $name = $this->getRequestData($request)["name"];
+        $description = $this->getRequestData($request)["description"];
+        $url = $this->getRequestData($request)["url"];
 
         if (!isset($url) or !isset($name)) {
             $response->setStatusCode(Response::HTTP_BAD_REQUEST, "Bad Request");
@@ -118,6 +116,10 @@ class BookmarkController extends AbstractController
         $bookmark->setDescription($description);
         $bookmark->setUrl($url);
         $bookmark->setLastupdate(new \DateTime("now", new \DateTimeZone(date_default_timezone_get())));
+        $user = $this->getUser();
+        if ($user) {
+            $bookmark->setUser($user);
+        }
 
         $entityManager->persist($bookmark);
         $entityManager->flush();
@@ -195,9 +197,9 @@ class BookmarkController extends AbstractController
            return $response;
         }
 
-        $name = $request->get("name");
-        $description = $request->get("description");
-        $url = $request->get("url");
+        $name = $this->getRequestData($request)["name"];;
+        $description = $this->getRequestData($request)["description"];;
+        $url = $this->getRequestData($request)["url"];;
         $bookmark->setLastupdate(new \DateTime('now', new \DateTimeZone(date_default_timezone_get())));
 
         if (!isset($name) AND !isset($description) AND !isset($url)) {

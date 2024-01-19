@@ -13,7 +13,7 @@ use Symfony\Component\Routing\Annotation\Route;
 
 class UserController extends AbstractController
 {
-    
+    use TraitController;
     /**
      * @Route("/api/users", name="read_user_collection", methods={"GET"})
      * @Route("/api/users/pages/{page}", name="read_user_collection_page", methods={"GET"})
@@ -141,10 +141,9 @@ class UserController extends AbstractController
             ], JsonResponse::HTTP_NOT_FOUND);
         }
 
-        $parameters = json_decode($request->getContent(), true);
-        $email = $parameters["email"];
-        $plaintextPassword = $parameters["password"];
-        $roles = $parameters["roles"];
+        $email = $this->getRequestData($request)["email"];
+        $plaintextPassword = $this->getRequestData($request)["password"];
+        $roles = $this->getRequestData($request)["roles"];
 
         if (empty($email) || empty($plaintextPassword) || empty($roles)) {
             return $response->setData([
