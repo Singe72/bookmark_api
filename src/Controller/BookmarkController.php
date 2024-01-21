@@ -10,6 +10,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\UrlHelper;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 class BookmarkController extends AbstractController
 {
@@ -89,7 +90,7 @@ class BookmarkController extends AbstractController
     /**
      * @Route("/api/bookmarks", name="create_bookmark", methods={"POST"})
      */
-    public function createBookmark(ManagerRegistry $doctrine, Request $request, UrlHelper $urlHelper): Response
+    public function createBookmark(ValidatorInterface $validator, ManagerRegistry $doctrine, Request $request, UrlHelper $urlHelper): Response
     {
         $response = new Response();
         $response->headers->set("Server", "BookmarkAPI");
@@ -97,17 +98,6 @@ class BookmarkController extends AbstractController
         $name = $this->getRequestData($request)["name"];
         $description = $this->getRequestData($request)["description"];
         $url = $this->getRequestData($request)["url"];
-
-        if (!isset($url) or !isset($name)) {
-            $response->setStatusCode(Response::HTTP_BAD_REQUEST, "Bad Request");
-            $response->setContent("Name and URL must not be empty");
-            return $response;
-        }
-        if (strlen($name) > 255) {
-            $response->setStatusCode(Response::HTTP_BAD_REQUEST, "Bad Request");
-            $response->setContent("Name must be less than 255 characters");
-            return $response;
-        }
 
         $entityManager = $doctrine->getManager();
 
@@ -119,6 +109,15 @@ class BookmarkController extends AbstractController
         $user = $this->getUser();
         if ($user) {
             $bookmark->setUser($user);
+        }
+
+        $errors = $validator->validate($bookmark);
+
+        if (count($errors) > 0) {
+            $errorsString = (string) $errors;
+            $response->setStatusCode(Response::HTTP_BAD_REQUEST, "Bad Request");
+            $response->setContent($errorsString);
+            return $response;
         }
 
         $entityManager->persist($bookmark);
@@ -183,7 +182,7 @@ class BookmarkController extends AbstractController
     /**
      * @Route("/api/bookmarks/{id}", name="update_bookmark", methods={"PUT"})
      */
-    public function updateBookmark(ManagerRegistry $doctrine, Request $request, $id): Response
+    public function updateBookmark(ValidatorInterface $validator, ManagerRegistry $doctrine, Request $request, $id): Response
     {
         $response = new Response();
         $response->headers->set("Server", "BookmarkAPI");
@@ -202,12 +201,6 @@ class BookmarkController extends AbstractController
         $url = $this->getRequestData($request)["url"];;
         $bookmark->setLastupdate(new \DateTime('now', new \DateTimeZone(date_default_timezone_get())));
 
-        if (!isset($name) AND !isset($description) AND !isset($url)) {
-            $response->setStatusCode(Response::HTTP_BAD_REQUEST, "Bad Request");
-            $response->setContent("Your request is empty!");
-            return $response;
-        }
-
         if ($name) {
             $bookmark->setName($name);
         }
@@ -216,6 +209,15 @@ class BookmarkController extends AbstractController
         }
         if ($url) {
             $bookmark->setUrl($url);
+        }
+
+        $errors = $validator->validate($bookmark);
+
+        if (count($errors) > 0) {
+            $errorsString = (string) $errors;
+            $response->setStatusCode(Response::HTTP_BAD_REQUEST, "Bad Request");
+            $response->setContent($errorsString);
+            return $response;
         }
 
         $entityManager = $doctrine->getManager();
