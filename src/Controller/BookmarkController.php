@@ -11,6 +11,9 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\UrlHelper;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
+use Symfony\Component\Form\Extension\Core\Type\TextareaType;
+use Symfony\Component\Form\Extension\Core\Type\TextType;
+use Symfony\Component\Form\Extension\Core\Type\UrlType;
 
 class BookmarkController extends AbstractController
 {
@@ -78,7 +81,7 @@ class BookmarkController extends AbstractController
         $response->setStatusCode(Response::HTTP_PARTIAL_CONTENT);
 
         $response->setCache([
-            "etag" => sha1($response->getContent().$response->headers->get("X-Total-Count").$response->headers->get("X-Current-page").$response->headers->get("X-Page-Size")),
+            "etag" => sha1($response->getContent() . $response->headers->get("X-Total-Count") . $response->headers->get("X-Current-page") . $response->headers->get("X-Page-Size")),
             "max_age" => 60,
             "public" => true
         ]);
@@ -95,32 +98,29 @@ class BookmarkController extends AbstractController
         $response = new Response();
         $response->headers->set("Server", "BookmarkAPI");
 
-        $name = $this->getRequestData($request)["name"];
-        $description = $this->getRequestData($request)["description"];
-        $url = $this->getRequestData($request)["url"];
-
         $entityManager = $doctrine->getManager();
 
         $bookmark = new Bookmark();
-        $bookmark->setName($name);
-        $bookmark->setDescription($description);
-        $bookmark->setUrl($url);
         $bookmark->setLastupdate(new \DateTime("now", new \DateTimeZone(date_default_timezone_get())));
+        
+        $form = $this->createBookmarkForm($bookmark);
+        $form->submit($this->getRequestData($request));
+
+        if (!$form->isValid()) {
+            $errors = $form->getErrors(true);
+            $errorMessages = [];
+            foreach ($errors as $error) {
+                $errorMessages[] = $error->getMessage();
+            }
+            return new JsonResponse($errorMessages, Response::HTTP_BAD_REQUEST);
+        }
+
         $user = $this->getUser();
         if ($user) {
             $bookmark->setUser($user);
         }
 
-        $errors = $validator->validate($bookmark);
-
-        if (count($errors) > 0) {
-            $errorsString = (string) $errors;
-            $response->setStatusCode(Response::HTTP_BAD_REQUEST, "Bad Request");
-            $response->setContent($errorsString);
-            return $response;
-        }
-
-        $entityManager->persist($bookmark);
+        $entityManager->persist($form->getData());
         $entityManager->flush();
 
         $id = $bookmark->getId();
@@ -164,7 +164,7 @@ class BookmarkController extends AbstractController
 
         $response->setCache([
             "last_modified" => $bookmark->getLastupdate(),
-            "etag" => sha1($response->getContent().$id),
+            "etag" => sha1($response->getContent() . $id),
             "max_age" => 60,
             "public" => true
         ]);
@@ -193,13 +193,13 @@ class BookmarkController extends AbstractController
         if (!$bookmark) {
             $response->setStatusCode(Response::HTTP_NOT_FOUND, "Not Found");
             $response->setContent("Wrong bookmark id!");
-           return $response;
+            return $response;
         }
 
-        $name = $this->getRequestData($request)["name"];;
-        $description = $this->getRequestData($request)["description"];;
-        $url = $this->getRequestData($request)["url"];;
-        $bookmark->setLastupdate(new \DateTime('now', new \DateTimeZone(date_default_timezone_get())));
+        $name = $this->getRequestData($request)["name"];
+        $description = $this->getRequestData($request)["description"];
+        $url = $this->getRequestData($request)["url"];
+        $bookmark->setLastupdate(new \DateTime("now", new \DateTimeZone(date_default_timezone_get())));
 
         if ($name) {
             $bookmark->setName($name);
@@ -241,5 +241,16 @@ class BookmarkController extends AbstractController
         $response->headers->set("Allow", "POST, GET");
 
         return $response;
+    }
+
+    private function createBookmarkForm(Bookmark $bookmark)
+    {
+        $form = $this->createFormBuilder($bookmark, ["csrf_protection" => false])
+            ->add("name", TextType::class)
+            ->add("description", TextareaType::class)
+            ->add("url", UrlType::class)
+            ->getForm();
+
+        return $form;
     }
 }
