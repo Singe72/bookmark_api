@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Entity\Bookmark;
+use App\Form\BookmarkType;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -93,7 +94,7 @@ class BookmarkController extends AbstractController
     /**
      * @Route("/api/bookmarks", name="create_bookmark", methods={"POST"})
      */
-    public function createBookmark(ValidatorInterface $validator, ManagerRegistry $doctrine, Request $request, UrlHelper $urlHelper): Response
+    public function createBookmark(ManagerRegistry $doctrine, Request $request, UrlHelper $urlHelper): Response
     {
         $response = new Response();
         $response->headers->set("Server", "BookmarkAPI");
@@ -182,7 +183,7 @@ class BookmarkController extends AbstractController
     /**
      * @Route("/api/bookmarks/{id}", name="update_bookmark", methods={"PUT"})
      */
-    public function updateBookmark(ValidatorInterface $validator, ManagerRegistry $doctrine, Request $request, $id): Response
+    public function updateBookmark(ManagerRegistry $doctrine, Request $request, $id): Response
     {
         $response = new Response();
         $response->headers->set("Server", "BookmarkAPI");
@@ -196,7 +197,22 @@ class BookmarkController extends AbstractController
             return $response;
         }
 
-        $name = $this->getRequestData($request)["name"];
+        $form = $this->createForm(BookmarkType::class, $bookmark);
+
+        $form->submit($this->getRequestData($request));
+
+        if (!$form->isValid()) {
+            $errors = $form->getErrors(true);
+            $errorMessages = [];
+            foreach ($errors as $error) {
+                $errorMessages[] = $error->getMessage();
+            }
+            return new JsonResponse($errorMessages, Response::HTTP_BAD_REQUEST);
+        }
+
+        $bookmark->setLastupdate(new \DateTime("now", new \DateTimeZone(date_default_timezone_get())));
+
+        /* $name = $this->getRequestData($request)["name"];
         $description = $this->getRequestData($request)["description"];
         $url = $this->getRequestData($request)["url"];
         $bookmark->setLastupdate(new \DateTime("now", new \DateTimeZone(date_default_timezone_get())));
@@ -218,7 +234,7 @@ class BookmarkController extends AbstractController
             $response->setStatusCode(Response::HTTP_BAD_REQUEST, "Bad Request");
             $response->setContent($errorsString);
             return $response;
-        }
+        } */
 
         $entityManager = $doctrine->getManager();
         $entityManager->flush();
