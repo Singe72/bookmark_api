@@ -4,7 +4,9 @@ namespace App\Controller;
 
 use App\Entity\Bookmark;
 use App\Form\BookmarkType;
+use App\Service\Metadata\Crawler\MetadataCrawlerInterface;
 use Doctrine\Persistence\ManagerRegistry;
+use MetadataParserInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -103,7 +105,7 @@ class BookmarkController extends AbstractController
 
         $bookmark = new Bookmark();
         $bookmark->setLastupdate(new \DateTime("now", new \DateTimeZone(date_default_timezone_get())));
-        
+
         $form = $this->createBookmarkForm($bookmark);
         $form->submit($this->getRequestData($request));
 
@@ -242,6 +244,86 @@ class BookmarkController extends AbstractController
         $response->setStatusCode(Response::HTTP_OK, "Ok");
         $response->setContent("Content updated");
 
+        return $response;
+    }
+
+    /**
+     * @Route("/api/bookmarks/{id}/metadata", name="read_bookmark_metadata", methods={"GET"})
+     */
+    /* public function metadata($id = "", ManagerRegistry $doctrine, UrlHelper $urlHelper, Request $request, MetadataCrawlerInterface $crawler): JsonResponse
+    {
+        $response = new JsonResponse();
+        $response->headers->set("Server", "BookmarkAPI");
+
+        $bookmark = $doctrine->getRepository(Bookmark::class)->find($id);
+
+        if (!$bookmark) {
+            throw $this->createNotFoundException("No bookmark found for id $id");
+        }
+
+        $url = $bookmark->getUrl();
+        $id = $bookmark->getId();
+
+        $metadata = $crawler->getContent($url);
+
+        $baseUrl = $urlHelper->getAbsoluteUrl("/api/bookmarks");
+        $response->headers->set("Link", "<$baseUrl/api/bookmarks/$id/qrcode>; title=\"QR Code\"; type=\"image/png\"");
+        $response->headers->set("Link", "<$baseUrl>; rel=\"related\"; title=\"Bookmarked link\"", false); // false pour pas écraser le Link précédent
+        $response->headers->set("Link", "<$baseUrl/api/bookmarks>; rel=\"collection\"", false); // false pour pas écraser le Link précédent
+        $response->headers->set("Link", "<$baseUrl/api/bookmarks/$id/metadata>; title=\"Metadata\"; type=\"application/json\"", false); // false pour pas écraser le Link précédent
+
+        $response->setVary("Accept");
+
+        $response->setCache([
+            "last_modified" => $bookmark->getLastupdate(),
+            "etag" => sha1($response->getContent() . $id),
+            "max_age" => 60,
+            "public" => true
+        ]);
+        $response->isNotModified($request);
+
+        $response->setData($metadata);
+
+        $response->setStatusCode(Response::HTTP_OK, "Ok");
+        return $response;
+    } */
+
+    public function metadata($id = "", ManagerRegistry $doctrine, UrlHelper $urlHelper, Request $request, MetadataCrawlerInterface $crawler, MetadataParserInterface $parser): JsonResponse
+    {
+        $response = new JsonResponse();
+        $response->headers->set("Server", "BookmarkAPI");
+
+        $bookmark = $doctrine->getRepository(Bookmark::class)->find($id);
+
+        if (!$bookmark) {
+            throw $this->createNotFoundException("No bookmark found for id $id");
+        }
+
+        $url = $bookmark->getUrl();
+        $id = $bookmark->getId();
+
+        $content = $crawler->getContent($url);
+        $metadata = $parser->getMetadata($url, strval($content));
+
+        $baseUrl = $urlHelper->getAbsoluteUrl("/api/bookmarks");
+        $response->headers->set("Link", "<$baseUrl/api/bookmarks/$id/qrcode>; title=\"QR Code\"; type=\"image/png\"");
+        $response->headers->set("Link", "<$baseUrl>; rel=\"related\"; title=\"Bookmarked link\"", false); // false pour pas écraser le Link précédent
+        $response->headers->set("Link", "<$baseUrl/api/bookmarks>; rel=\"collection\"", false); // false pour pas écraser le Link précédent
+        $response->headers->set("Link", "<$baseUrl/api/bookmarks/$id/metadata>; title=\"Metadata\"; type=\"application/json\"", false); // false pour pas écraser le Link précédent
+
+        $response->setVary("Accept");
+
+        $response->setCache([
+            "last_modified" => $bookmark->getLastupdate(),
+            "etag" => sha1($response->getContent() . $id),
+            "max_age" => 60,
+            "public" => true
+        ]);
+        $response->isNotModified($request);
+
+        $response->setData($metadata);
+
+        $response->setStatusCode(Response::HTTP_OK, "Ok");
         return $response;
     }
 
