@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Entity\Bookmark;
 use App\Form\BookmarkType;
 use App\Service\Metadata\Crawler\MetadataCrawlerInterface;
+use App\Service\Metadata\Parser\MetadataParserInterface as ParserMetadataParserInterface;
 use Doctrine\Persistence\ManagerRegistry;
 use MetadataParserInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -250,7 +251,7 @@ class BookmarkController extends AbstractController
     /**
      * @Route("/api/bookmarks/{id}/metadata", name="read_bookmark_metadata", methods={"GET"})
      */
-    /* public function metadata($id = "", ManagerRegistry $doctrine, UrlHelper $urlHelper, Request $request, MetadataCrawlerInterface $crawler): JsonResponse
+    /* public function metadata($id = "", ManagerRegistry $doctrine, UrlHelper $urlHelper, Request $request, MetadataCrawlerInterface $httpCrawler): JsonResponse
     {
         $response = new JsonResponse();
         $response->headers->set("Server", "BookmarkAPI");
@@ -264,7 +265,7 @@ class BookmarkController extends AbstractController
         $url = $bookmark->getUrl();
         $id = $bookmark->getId();
 
-        $metadata = $crawler->getContent($url);
+        $metadata = $httpCrawler->getContent($url);
 
         $baseUrl = $urlHelper->getAbsoluteUrl("/api/bookmarks");
         $response->headers->set("Link", "<$baseUrl/api/bookmarks/$id/qrcode>; title=\"QR Code\"; type=\"image/png\"");
@@ -288,7 +289,7 @@ class BookmarkController extends AbstractController
         return $response;
     } */
 
-    public function metadata($id = "", ManagerRegistry $doctrine, UrlHelper $urlHelper, Request $request, MetadataCrawlerInterface $crawler, MetadataParserInterface $parser): JsonResponse
+    public function metadata($id = "", ManagerRegistry $doctrine, UrlHelper $urlHelper, Request $request, MetadataCrawlerInterface $crawler, ParserMetadataParserInterface $parser): JsonResponse
     {
         $response = new JsonResponse();
         $response->headers->set("Server", "BookmarkAPI");
@@ -303,7 +304,7 @@ class BookmarkController extends AbstractController
         $id = $bookmark->getId();
 
         $content = $crawler->getContent($url);
-        $metadata = $parser->getMetadata($url, strval($content));
+        $metadata = $parser->getMetadata($url, $content["content"]);
 
         $baseUrl = $urlHelper->getAbsoluteUrl("/api/bookmarks");
         $response->headers->set("Link", "<$baseUrl/api/bookmarks/$id/qrcode>; title=\"QR Code\"; type=\"image/png\"");

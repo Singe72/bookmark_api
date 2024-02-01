@@ -10,6 +10,14 @@ services:
     _defaults:
         autowire: true      # Automatically injects dependencies in your services.
         autoconfigure: true # Automatically registers your services as commands, event subscribers, etc.
+    App\Service\Metadata\Crawler\CurlMetadataCrawler: ~
+    App\Service\Metadata\Crawler\HttpClientMetadataCrawler: ~
+
+    App\Service\Metadata\Crawler\MetadataCrawlerInterface $httpCrawler: '@App\Service\Metadata\Crawler\HttpClientMetadataCrawler'
+    App\Service\Metadata\Crawler\MetadataCrawlerInterface: '@App\Service\Metadata\Crawler\CurlMetadataCrawler'
+
+    App\Controller\BookmarkController:
+        autowire: true
 
     # makes classes in src/ available to be used as services
     # this creates a service per class whose id is the fully-qualified class name

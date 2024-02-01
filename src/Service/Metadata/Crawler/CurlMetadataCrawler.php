@@ -2,9 +2,6 @@
 
 namespace App\Service\Metadata\Crawler;
 
-use Symfony\Component\DependencyInjection\Attribute\AsAlias;
-
-#[AsAlias(id: "app.curlcrawler", public: true)]
 class CurlMetadataCrawler implements MetadataCrawlerInterface
 {
     public function getContent(string $url): array

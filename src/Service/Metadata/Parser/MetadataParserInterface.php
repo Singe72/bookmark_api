@@ -1,5 +1,7 @@
 <?php
 
+namespace App\Service\Metadata\Parser;
+
 interface MetadataParserInterface
 {
     /**

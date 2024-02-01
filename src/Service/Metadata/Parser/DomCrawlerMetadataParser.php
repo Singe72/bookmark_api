@@ -1,5 +1,7 @@
 <?php
 
+namespace App\Service\Metadata\Parser;
+
 use Symfony\Component\DomCrawler\Crawler;
 
 class DomCrawlerMetadataParser implements MetadataParserInterface
