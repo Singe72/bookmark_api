@@ -16,6 +16,15 @@ services:
     App\Service\Metadata\Crawler\MetadataCrawlerInterface $httpCrawler: '@App\Service\Metadata\Crawler\HttpClientMetadataCrawler'
     App\Service\Metadata\Crawler\MetadataCrawlerInterface: '@App\Service\Metadata\Crawler\CurlMetadataCrawler'
 
+    App\MessageHandler\CacheMetadataMessageHandler:
+        arguments:
+            $cache: '@cache.app'
+            $crawler: '@App\Service\Metadata\MetadataCrawler'
+            $parser: '@App\Service\Parser\MetadataParser'
+            $logger: '@logger'
+        tags:
+            - { name: messenger.message_handler }
+
     App\Controller\BookmarkController:
         autowire: true
 

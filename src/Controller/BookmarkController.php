@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Entity\Bookmark;
 use App\Form\BookmarkType;
+use App\Message\CacheMetadataMessage;
 use App\Service\Metadata\Crawler\MetadataCrawlerInterface;
 use App\Service\Metadata\Parser\MetadataParserInterface as ParserMetadataParserInterface;
 use Doctrine\Persistence\ManagerRegistry;
@@ -20,6 +21,8 @@ use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\Extension\Core\Type\UrlType;
 use Symfony\Contracts\Cache\CacheInterface;
+use Symfony\Contracts\Cache\ItemInterface;
+use Symfony\Component\Messenger\MessageBusInterface;
 
 class BookmarkController extends AbstractController
 {
@@ -291,7 +294,7 @@ class BookmarkController extends AbstractController
         return $response;
     } */
 
-    public function metadata($id = "", ManagerRegistry $doctrine, UrlHelper $urlHelper, Request $request, MetadataCrawlerInterface $crawler, ParserMetadataParserInterface $parser, CacheInterface $cache, LoggerInterface $logger): JsonResponse
+    public function metadata($id = "", ManagerRegistry $doctrine, UrlHelper $urlHelper, Request $request, MetadataCrawlerInterface $crawler, ParserMetadataParserInterface $parser, CacheInterface $cache, LoggerInterface $logger, MessageBusInterface $messageBus): JsonResponse
     {
         $response = new JsonResponse();
         $response->headers->set("Server", "BookmarkAPI");
@@ -305,14 +308,14 @@ class BookmarkController extends AbstractController
         $url = $bookmark->getUrl();
         $id = $bookmark->getId();
 
-        $metadata = $cache->get('bookmark_metadata_' . $id, function () use ($url, $crawler, $parser, $id, $logger) {
+        $messageBus->dispatch(new CacheMetadataMessage($bookmark->getId()));
+
+        /* $metadata = $cache->get('bookmark_metadata_' . $id, function (ItemInterface $item) use ($url, $crawler, $parser, $id, $logger) {
             $logger->debug("Caching metadata for Bookmark ID: $id, URL: $url");
+            $item->expiresAfter(\DateInterval::createFromDateString("5 minutes"));
             $content = $crawler->getContent($url);
             return $parser->getMetadata($url, $content["content"]);
-        });
-
-        /* $content = $crawler->getContent($url);
-        $metadata = $parser->getMetadata($url, $content["content"]); */
+        }); */
 
         $baseUrl = $urlHelper->getAbsoluteUrl("/api/bookmarks");
         $response->headers->set("Link", "<$baseUrl/api/bookmarks/$id/qrcode>; title=\"QR Code\"; type=\"image/png\"");
@@ -330,7 +333,7 @@ class BookmarkController extends AbstractController
         ]);
         $response->isNotModified($request);
 
-        $response->setData($metadata);
+        //$response->setData($metadata);
 
         $response->setStatusCode(Response::HTTP_OK, "Ok");
         return $response;
